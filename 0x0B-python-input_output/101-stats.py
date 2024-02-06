@@ -7,7 +7,6 @@ prints the following statistics:
     - Count of read status codes up to that point.
 """
 
-
 def print_stats(size, status_codes):
     """Print accumulated metrics.
 
@@ -19,41 +18,37 @@ def print_stats(size, status_codes):
     for key in sorted(status_codes):
         print("{}: {}".format(key, status_codes[key]))
 
-
 if __name__ == "__main__":
     import sys
 
     size = 0
     status_codes = {}
-    valid_codes = ['200', '301', '400', '401', '403', '404', '405', '500']
+    valid_codes = {'200', '301', '400', '401', '403', '404', '405', '500'}  # Use a set for faster membership checks
     count = 0
 
     try:
         for line in sys.stdin:
-            if count == 10:
-                print_stats(size, status_codes)
-                count = 1
-            else:
-                count += 1
-
             line = line.split()
 
-            try:
-                size += int(line[-1])
-            except (IndexError, ValueError):
-                pass
+            if len(line) >= 2:  # Ensure sufficient elements for size and status code
+                try:
+                    size += int(line[-1])
+                except ValueError:
+                    print(f"Warning: Invalid size value in line: {line}")
 
-            try:
                 if line[-2] in valid_codes:
-                    if status_codes.get(line[-2], -1) == -1:
-                        status_codes[line[-2]] = 1
-                    else:
-                        status_codes[line[-2]] += 1
-            except IndexError:
-                pass
+                    status_codes[line[-2]] = status_codes.get(line[-2], 0) + 1
+                else:
+                    print(f"Warning: Invalid status code in line: {line}")
 
-        print_stats(size, status_codes)
+            count += 1
+
+            if count == 10:
+                print_stats(size, status_codes)
+                count = 0
 
     except KeyboardInterrupt:
         print_stats(size, status_codes)
         raise
+
+    print_stats(size, status_codes)  # Print final stats
